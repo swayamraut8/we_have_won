@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Supermarket Product Terminal</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fa;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    form {
+      max-width: 500px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #219150;
+    }
+
+    .filter-input {
+      max-width: 500px;
+      margin: 10px auto;
+      display: block;
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 30px auto;
+    }
+
+    .product-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .product-content {
+      padding: 15px;
+      flex: 1;
+    }
+
+    .product-content h3 {
+      margin: 0 0 5px;
+    }
+
+    .product-content p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .delete-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+      border-top: 1px solid #eee;
+    }
+
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Supermarket Product Terminal</h1>
+
+  <form id="addProductForm">
+    <input type="text" id="ProductName" placeholder="Product Name" required>
+    <input type="number" id="ProductPrice" placeholder="Product Price" required>
+    <input type="url" id="ImageLink" placeholder="Image Link (URL)" required>
+    <input type="text" id="UID" placeholder="UID" required>
+    <input type="text" id="catNumber" placeholder="Category Number" required>
+    <button type="submit">Add Product</button>
+  </form>
+
+  <input class="filter-input" id="searchInput" type="text" placeholder="Search products by name or UID...">
+
+  <div class="product-grid" id="productGrid"></div>
+
+  <script>
+    const baseUrl = 'http://localhost:3001';
+
+    async function fetchAllProducts() {
+      const res = await fetch(`${baseUrl}/getAllProducts`);
+      return await res.json();
+    }
+
+    function createCard(product) {
+      const card = document.createElement("div");
+      card.className = "product-card";
+
+      const img = document.createElement("img");
+      img.src = product.ImageLink || "https://via.placeholder.com/250";
+      img.alt = product.ProductName;
+
+      const content = document.createElement("div");
+      content.className = "product-content";
+      content.innerHTML = `
+        <h3>${product.ProductName}</h3>
+        <p>Price: ₹${product.ProductPrice}</p>
+        <p>UID: ${product.UID}</p>
+        <p>Owner: ${product.ProductOwner}</p>
+      `;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-btn";
+      deleteBtn.textContent = "Remove";
+      deleteBtn.onclick = () => confirmDelete(product);
+
+      card.appendChild(img);
+      card.appendChild(content);
+      card.appendChild(deleteBtn);
+
+      return card;
+    }
+
+    async function confirmDelete(product) {
+      const result = await Swal.fire({
+        title: `Delete "${product.ProductName}"?`,
+        text: "This action cannot be undone!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#aaa'
+      });
+
+      if (result.isConfirmed) {
+        await fetch(`${baseUrl}/deleteProduct`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ UID: product.UID })
+        });
+        Swal.fire("Deleted!", "The product has been removed.", "success");
+        renderProducts();
+      }
+    }
+
+    async function renderProducts(filter = "") {
+      const products = await fetchAllProducts();
+      const grid = document.getElementById("productGrid");
+      grid.innerHTML = "";
+
+      const filtered = products.filter(p =>
+        p.ProductName.toLowerCase().includes(filter.toLowerCase()) ||
+        p.UID.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      filtered.forEach(product => {
+        grid.appendChild(createCard(product));
+      });
+    }
+
+    document.getElementById("addProductForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = {
+        ProductName: document.getElementById("ProductName").value,
+        ProductPrice: parseFloat(document.getElementById("ProductPrice").value),
+        ImageLink: document.getElementById("ImageLink").value,
+        UID: document.getElementById("UID").value,
+        catNumber: document.getElementById("catNumber").value,
+        ProductOwner: "supermarket"
+      };
+
+      const res = await fetch(`${baseUrl}/addProduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        Swal.fire("Added!", "Product added successfully!", "success");
+        document.getElementById("addProductForm").reset();
+        renderProducts();
+      } else {
+        Swal.fire("Error!", "Failed to add product.", "error");
+      }
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      renderProducts(e.target.value);
+    });
+
+    renderProducts();
+  </script>
+</body>
+</html>

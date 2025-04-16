@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>PayApp</title>
+    <style>
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f0f2f5;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+header {
+    background: #0ea655;
+    color: #fff;
+    padding: 15px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+h1 {
+    margin: 0;
+    font-size: 35px;
+}
+
+.menu {
+    display: flex;
+    justify-content: center;
+    background: #fff;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-wrap: wrap;
+}
+
+.menu a {
+    margin: 5px 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.menu a:hover, .menu a.active {
+    color: #0ea655;
+}
+
+.content {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.button {
+    background-color: #0ea655;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #357abd;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+}
+
+.product-table th, .product-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.product-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #0ea655;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+    z-index: 1000;
+}
+
+.help-button:hover {
+    transform: scale(1.1);
+    background-color: #357abd;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.hidden {
+    display: none;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header .container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #balance {
+        margin-top: 10px;
+    }
+
+    .menu {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .menu a {
+        margin: 5px 0;
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .product-table {
+        font-size: 14px;
+    }
+
+    .product-table th, .product-table td {
+        padding: 8px;
+    }
+
+    .button {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .help-button {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 40px;
+    }
+
+    .product-table {
+        font-size: 12px;
+    }
+
+    .product-table th, .product-table td {
+        padding: 6px;
+    }
+
+    .menu a#auth-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 5px 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+    .menu a#auth-link:hover {
+    color: #0ea655;
+}
+
+}
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+    
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0Uhw0qbnRsgKniBPjl2vexvN71lGLggk",
+            authDomain: "snapsh-b87d3.firebaseapp.com",
+            projectId: "snapsh-b87d3",
+            storageBucket: "snapsh-b87d3.firebasestorage.app",
+            messagingSenderId: "159572647659",
+            appId: "1:159572647659:web:5974b7411d0068e853a8ae"
+        };
+    
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+    
+        onAuthStateChanged(auth, (user) => {
+            const menu = document.querySelector(".menu");
+            let existingAuthLink = document.getElementById("auth-link");
+            if (existingAuthLink) existingAuthLink.remove();
+    
+            const authLink = document.createElement("a");
+            authLink.id = "auth-link";
+            authLink.style.cursor = "pointer";
+    
+            if (user) {
+                authLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+                authLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    signOut(auth).then(() => window.location.href = "index.html");
+                });
+            } else {
+                authLink.href = "index.html";
+                authLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Logout';
+            }
+    
+            menu.appendChild(authLink);
+        });
+    </script>
+    
+  
+    <script>
+        let deferredPrompt;
+      
+        window.addEventListener("beforeinstallprompt", (event) => {
+          event.preventDefault();
+          deferredPrompt = event;
+      
+          const installButton = document.createElement("button");
+          installButton.textContent = "Install App";
+          installButton.style.position = "fixed";
+          installButton.style.bottom = "20px";
+          installButton.style.right = "20px";
+          installButton.style.padding = "10px";
+          installButton.style.background = "#0ea655";
+          installButton.style.color = "#fff";
+          installButton.style.border = "none";
+          installButton.style.cursor = "pointer";
+      
+          installButton.addEventListener("click", () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === "accepted") {
+                console.log("User installed the app");
+              }
+              deferredPrompt = null;
+            });
+          });
+      
+          document.body.appendChild(installButton);
+        });
+      </script>
+      
+    
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>SnapShop</h1>
+            <div id="balance"><i class="fas fa-wallet"></i> ₹ 100.00</div>
+        </div>
+    </header>
+    <nav class="menu">
+        <a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="#" id="purchases-link"><i class="fas fa-shopping-cart"></i> Purchases</a>
+        <a href="#" id="load-balance-link"><i class="fas fa-money-bill-wave"></i> Load Balance</a>
+        <a href="#" id="report-link"><i class="fas fa-flag"></i> Report</a>
+    </nav>
+    <div class="container content">
+        <div id="home" class="content-page">
+            <button id="scan-btn" class="button"><i class="fas fa-qrcode"></i> Scan QR</button>
+            <div id="qr-scanner" class="hidden">
+                <div id="qr-reader"></div>
+            </div>
+        </div>
+        <div id="product-page" class="content-page hidden">
+            <table class="product-table">
+                <tr>
+                    <th>Product Name</th>
+                    <th>Product Owner</th>
+                    <th>Product Price</th>
+                    <th>Image</th>
+                </tr>
+                <tr>
+                    <td id="product-name">---</td>
+                    <td id="product-owner">---</td>
+                    <td id="product-price">---</td>
+                    <td><img id="product-image" src="" alt="Product Image" width="100" /></td>
+                </tr>
+            </table>
+            <button id="purchase-btn" class="button hidden"><i class="fas fa-shopping-cart"></i> Purchase Product</button>
+            <button id="return-btn" class="button hidden"><i class="fas fa-undo"></i> Return Product</button>
+        </div>
+        <div id="purchases" class="content-page hidden">
+            <h2>Purchases</h2>
+            <div id="purchases-list"></div>
+        </div>
+        <div id="load-balance" class="content-page hidden">
+            <h2>Load Balance</h2>
+            <div class="input-group">
+                <input type="number" id="amount" placeholder="Enter amount" />
+                <button id="add-balance-btn" class="button"><i class="fas fa-plus"></i> Add Balance</button>
+            </div>
+        </div>
+        <div id="report" class="content-page hidden">
+            <h2>Report an Issue</h2>
+            <form id="report-form">
+                <div class="form-group">
+                    <label for="issue-type">Issue Type:</label>
+                    <select id="issue-type" required>
+                        <option value="">Select an issue type</option>
+                        <option value="technical">Technical Problem</option>
+                        <option value="billing">Billing Issue</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="attachment">Upload Photos or Documents:</label>
+                    <input type="file" id="attachment" multiple>
+                </div>
+                <button type="submit" class="button"><i class="fas fa-paper-plane"></i> Submit Report</button>
+            </form>
+        </div>
+    </div>
+    <div id="help-button" class="help-button">
+        <i class="fas fa-phone"></i>
+    </div>
+<script>
+    let currentPage = "home";
+    let balance = 100.00;
+    let currentProductUID = "";
+    let html5QrCode;
+
+    function showPage(pageId) {
+        document.querySelectorAll(".content-page").forEach((page) => {
+            page.classList.add("hidden");
+        });
+        document.getElementById(pageId).classList.remove("hidden");
+        document.querySelectorAll(".menu a").forEach((link) => {
+            link.classList.remove("active");
+        });
+        document.getElementById(pageId + "-link").classList.add("active");
+    }
+
+    document.getElementById("home-link").addEventListener("click", () => {
+        currentPage = "home";
+        showPage("home");
+    });
+
+    document.getElementById("purchases-link").addEventListener("click", () => {
+        currentPage = "purchases";
+        showPage("purchases");
+        fetchPurchases();
+    });
+
+    document.getElementById("load-balance-link").addEventListener("click", () => {
+        currentPage = "load-balance";
+        showPage("load-balance");
+    });
+
+    document.getElementById("report-link").addEventListener("click", () => {
+        currentPage = "report";
+        showPage("report");
+    });
+
+    document.getElementById("scan-btn").addEventListener("click", () => {
+        document.getElementById("qr-scanner").classList.remove("hidden");
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+            },
+            (qrCodeMessage) => {
+                console.log(`QR Code detected: ${qrCodeMessage}`);
+                html5QrCode.stop().then(() => {
+                    document.getElementById("qr-scanner").classList.add("hidden");
+                    fetchProductInfo(qrCodeMessage);
+                }).catch((err) => {
+                    console.error(`Error stopping QR code scanner: ${err}`);
+                });
+            },
+            (errorMessage) => {
+                console.warn(`QR Code no match: ${errorMessage}`);
+            }
+        ).catch((err) => {
+            console.error(`Error starting QR code scanner: ${err}`);
+        });
+    });
+
+    function fetchProductInfo(uid) {
+        currentProductUID = uid;
+        fetch(`http://localhost:3001//checkUID?uid=${uid}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                if (data.product.ProductOwner === "supermarket") {
+                    document.getElementById("purchase-btn").classList.remove("hidden");
+                    document.getElementById("return-btn").classList.add("hidden");
+                } else {
+                    document.getElementById("purchase-btn").classList.add("hidden");
+                    document.getElementById("return-btn").classList.remove("hidden");
+                }
+                document.getElementById("product-name").innerText = data.product.ProductName || "---";
+                document.getElementById("product-owner").innerText = data.product.ProductOwner || "---";
+                document.getElementById("product-price").innerText = data.product.ProductPrice || "---";
+                document.getElementById("product-image").src = data.product.ImageLink || "";
+                showPage("product-page");
+            })
+            .catch((error) => {
+                console.error("Error fetching product info:", error);
+            });
+    }
+
+    document.getElementById("purchase-btn").addEventListener("click", () => {
+        fetch(`http://localhost:3001//checkUID?uid=${currentProductUID}`, {
+            method: "GET",
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.product.ProductPrice <= balance) {
+                    fetch(`http://localhost:3001//purchaseProduct`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ uid: currentProductUID }),
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.success) {
+                                balance -= data.product.ProductPrice;
+                                updateBalance();
+                                alert("Product purchased successfully!");
+                                document.getElementById("purchase-btn").classList.add("hidden");
+                                document.getElementById("return-btn").classList.remove("hidden");
+                                fetchPurchases();
+                            } else {
+                                alert("Error purchasing product!");
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error purchasing product:", error);
+                        });
+                } else {
+                    alert("Insufficient balance!");
+                }
+            });
+    });
+
+    document.getElementById("return-btn").addEventListener("click", () => {
+        fetch(`http://localhost:3001//returnProduct`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ uid: currentProductUID }),
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    balance += data.product.ProductPrice;
+                    updateBalance();
+                    alert("Product returned successfully!");
+                    document.getElementById("return-btn").classList.add("hidden");
+                    document.getElementById("purchase-btn").classList.remove("hidden");
+                    fetchPurchases();
+                } else {
+                    alert("Error returning product!");
+                }
+            })
+            .catch((error) => {
+                console.error("Error returning product:", error);
+            });
+    });
+
+    function fetchPurchases() {
+        fetch(`http://localhost:3001//purchases`)
+            .then((response) => response.json())
+            .then((data) => {
+                const purchasesList = document.getElementById("purchases-list");
+                purchasesList.innerHTML = "";
+                if (data.length > 0) {
+                    const table = document.createElement("table");
+                    table.classList.add("product-table");
+                    const headerRow = document.createElement("tr");
+                    const headers = ["Product Name", "Product Owner", "Product Price", "Image", "Actions"];
+                    headers.forEach((headerText) => {
+                        const header = document.createElement("th");
+                        header.innerText = headerText;
+                        headerRow.appendChild(header);
+                    });
+                    table.appendChild(headerRow);
+
+                    data.forEach((product) => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                        <td>${product.ProductName || "---"}</td>
+                        <td>${product.ProductOwner || "---"}</td>
+                        <td>${product.ProductPrice || "---"}</td>
+                        <td><img src="${product.ImageLink || ""}" alt="Product Image" width="50" /></td>
+                        <td>
+                            <button class="button purchase-btn" data-uid="${product.UID}" ${product.ProductOwner !== "supermarket" ? "disabled" : ""}>Buy</button>
+                            <button class="button return-btn" data-uid="${product.UID}" ${product.ProductOwner === "supermarket" ? "disabled" : ""}>Return</button>
+                        </td>
+                    `;
+                        table.appendChild(row);
+                    });
+                    purchasesList.appendChild(table);
+
+                    document.querySelectorAll(".purchase-btn").forEach((button) => {
+                        button.addEventListener("click", (event) => {
+                            const uid = event.target.getAttribute("data-uid");
+                            fetch(`http://localhost:3001//purchaseProduct`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ uid }),
+                            })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                    if (data.success) {
+                                        alert("Product purchased successfully!");
+                                        fetchPurchases();
+                                    } else {
+                                        alert("Error purchasing product!");
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error("Error purchasing product:", error);
+                                });
+                        });
+                    });
+
+                    document.querySelectorAll(".return-btn").forEach((button) => {
+                        button.addEventListener("click", (event) => {
+                            const uid = event.target.getAttribute("data-uid");
+                            fetch(`http://localhost:3001//returnProduct`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ uid }),
+                            })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                    if (data.success) {
+                                        alert("Product returned successfully!");
+                                        fetchPurchases();
+                                    } else {
+                                        alert("Error returning product!");
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error("Error returning product:", error);
+                                });
+                        });
+                    });
+                } else {
+                    purchasesList.innerHTML = "<p>No purchases found.</p>";
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching purchases:", error);
+            });
+    }
+
+    document.getElementById("add-balance-btn").addEventListener("click", () => {
+        const amount = parseFloat(document.getElementById("amount").value);
+        if (!isNaN(amount) && amount > 0) {
+            balance += amount;
+            updateBalance();
+            alert(`Added ₹${amount.toFixed(2)} to balance!`);
+        } else {
+            alert("Please enter a valid amount.");
+        }
+    });
+
+    function updateBalance() {
+        document.getElementById("balance").innerHTML = `<i class="fas fa-wallet"></i> ₹${balance.toFixed(2)}`;
+    }
+
+    // New functionality for the help button
+    document.getElementById("help-button").addEventListener("click", () => {
+        const phoneNumber = "+919372175185"; // Replace with the actual support phone number
+        window.location.href = `tel:${phoneNumber}`;
+    });
+
+    // New functionality for the report form
+    document.getElementById("report-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const issueType = document.getElementById("issue-type").value;
+        const description = document.getElementById("description").value;
+        const attachment = document.getElementById("attachment").files;
+        
+        // Here you would typically send this data to a server
+        console.log("Report submitted:", { issueType, description, attachment });
+        alert("Thank you for your report. We will review it shortly.");
+        
+        // Reset the form
+        event.target.reset();
+    });
+
+    showPage("home");
+    updateBalance();
+
+</script> 
+    
+</body>
+</html>

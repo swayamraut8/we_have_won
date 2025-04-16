@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermarket Inventory Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: #0da92f;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 1);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+        }
+        .canvo{
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        .container {
+            border-radius: 30px;
+            margin: 20px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            color: #eee8e8;
+        }
+
+        h2 {
+            color: black;
+            font-weight: bolder;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .chart-container {
+            margin-top: 100px;
+            width: 600px;
+        }
+        .bar{
+            height: 400px;
+          
+        }
+        .pie{
+            margin-top: 50px; 
+            width: 400px;
+        
+        }
+        .curve{
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Supermarket Inventory Dashboard</h1>
+    </header>
+
+    <div class="container">
+        <h2>Inventory Summary</h2>
+        <table id="inventory-summary">
+            <thead>
+                <tr>
+                    <th>Category Number</th>
+                    <th>Total Items</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+
+        <div class="canvo">
+            <div class="chart-container bar">
+                <canvas id="inventoryChart"></canvas>
+            </div>
+
+            <div class="pie">
+                <canvas id="inventoryPieChart"></canvas>
+            </div>
+        </div>
+
+        <h2>Products in Stock (Owned by Supermarket)</h2>
+        <table id="product-list">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Product Owner</th>
+                    <th>Product Price</th>
+                    <th>Category Number</th>
+                    <th>UID</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let inventoryChart;
+        let inventoryPieChart;
+
+        // Function to create or update the bar chart
+        function updateBarChart(labels, data) {
+            if (inventoryChart) {
+                inventoryChart.data.labels = labels;
+                inventoryChart.data.datasets[0].data = data;
+                inventoryChart.update();
+            } else {
+                const ctx = document.getElementById('inventoryChart').getContext('2d');
+                inventoryChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total Items',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Function to create or update the pie chart
+        function updatePieChart(labels, data) {
+            if (inventoryPieChart) {
+                inventoryPieChart.data.labels = labels;
+                inventoryPieChart.data.datasets[0].data = data;
+                inventoryPieChart.update();
+            } else {
+                const ctx = document.getElementById('inventoryPieChart').getContext('2d');
+                inventoryPieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(255, 205, 86)', 'rgb(245, 215, 286)'
+                                // Add more colors if needed
+                            ],
+                            hoverOffset: 4
+                        }]
+                    }
+                });
+            }
+        }
+
+        // Function to update the inventory summary table
+        const categoryOrder = [ /* Add more categories */];
+
+        function updateInventorySummary(data) {
+            const summaryTable = document.getElementById('inventory-summary').getElementsByTagName('tbody')[0];
+            summaryTable.innerHTML = '';
+
+            const categoryLabels = categoryOrder.slice();
+            const totalItemsData = new Array(categoryLabels.length).fill(0);
+
+            data.sort((a, b) => (a._id || 'Unknown Category').localeCompare(b._id || 'Unknown Category'));
+
+            data.forEach(item => {
+                const row = summaryTable.insertRow();
+                const cellCategory = row.insertCell(0);
+                const cellTotalItems = row.insertCell(1);
+
+                cellCategory.textContent = item._id || 'Unknown Category';
+                cellTotalItems.textContent = item.totalItems || 0;
+
+                const categoryIndex = categoryLabels.indexOf(item._id || 'Unknown Category');
+                if (categoryIndex !== -1) {
+                    categoryLabels[categoryIndex] = item._id || 'Unknown Category';
+                    totalItemsData[categoryIndex] = item.totalItems || 0;
+                } else {
+                    categoryLabels.push(item._id || 'Unknown Category');
+                    totalItemsData.push(item.totalItems || 0);
+                }
+            });
+
+            // Update the charts with new data
+            updateBarChart(categoryLabels, totalItemsData);
+            updatePieChart(categoryLabels, totalItemsData);
+        }
+
+        // Function to update the product list table
+        function updateProductsInStock(data) {
+            const productTable = document.getElementById('product-list').getElementsByTagName('tbody')[0];
+            productTable.innerHTML = '';
+
+            data.sort((a, b) => a.ProductName.localeCompare(b.ProductName));
+
+            data.forEach(product => {
+                const row = productTable.insertRow();
+                const cellName = row.insertCell(0);
+                const cellOwner = row.insertCell(1);
+                const cellPrice = row.insertCell(2);
+                const cellCategory = row.insertCell(3);
+                const cellUID = row.insertCell(4);
+
+                cellName.textContent = product.ProductName;
+                cellOwner.textContent = product.ProductOwner;
+                cellPrice.textContent = product.ProductPrice;
+                cellCategory.textContent = product.catNumber || 'Not Available';
+                cellUID.textContent = product.UID;
+            });
+        }
+
+        // Function to fetch and update data periodically
+        function fetchData() {
+            fetch('http://127.0.0.1:3001/inventory-summary')
+                .then(response => response.json())
+                .then(data => updateInventorySummary(data));
+
+            fetch('http://127.0.0.1:3001/purchases')
+                .then(response => response.json())
+                .then(data => updateProductsInStock(data));
+        }
+
+        setInterval(fetchData, 1000);
+        fetchData();
+    </script>
+
+</body>
+
+</html>
